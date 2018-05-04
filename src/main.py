@@ -4,26 +4,24 @@
 #--- Date           : 21st April 2018
 #----------------------------------------------
 
+from utils import utils
 import os
 import logging
 import logging.handlers
 import random
-
 import numpy as np
 import skvideo.io
 import cv2
 import matplotlib.pyplot as plt
 import csv
 
-import utils
 cv2.ocl.setUseOpenCL(False)
 random.seed(123)
 
-from pipeline import (
+from infrastructure import (
     PipelineRunner,
     ContourDetection,
     Visualizer,
-    CsvWriter,
     VehicleCounter)
 
 # ============================================================================
@@ -32,7 +30,6 @@ IMAGE_DIR = "./out"
 VIDEO_SOURCE = "bradley_input.mp4"
 SHAPE = (352, 640)  # HxW
 EXIT_PTS = np.array([
-    #[[400, 250], [400, 110], [440, 110], [440, 250]]
     [[120, 100], [380, 0], [510, 0], [385, 150]],
     [[0, 140], [0, 105], [110, 105], [40, 140	]]
 ])
@@ -70,10 +67,8 @@ def main():
     pipeline = PipelineRunner(pipeline=[
         ContourDetection(bg_subtractor=bg_subtractor,
                          save_image=SAVE_IMAGE, image_dir=IMAGE_DIR),
-
         VehicleCounter(exit_masks=[exit_mask], y_weight=2.0),
-        Visualizer(image_dir=IMAGE_DIR),
-        CsvWriter(path='./', name='report.csv')
+        Visualizer(image_dir=IMAGE_DIR)
     ], log_level=logging.DEBUG)
 
     cap = skvideo.io.vreader(VIDEO_SOURCE)

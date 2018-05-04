@@ -4,6 +4,7 @@
 #--- Date           : 21st April 2018
 #----------------------------------------------
 
+from utils import utils
 import os
 import logging
 import csv
@@ -13,16 +14,12 @@ import cv2
 import datetime
 import csv
 
-import utils
-
-
 DIVIDER_COLOUR = (0, 0, 0)
 BOUNDING_BOX_COLOUR = (0, 255, 0) # green
 CENTROID_COLOUR = (255, 0, 0) # blue
 CAR_COLOURS = [(0, 255, 255)] # yellow
 EXIT_COLOR = (45, 45, 255) # red
 
-#is_vehicle_passed = [] # it is just a register that remembers the vehicle passed at previous frame
 current_path = os.getcwd() #get current path to save detected vehicle images
 vehicle_count = [0]
 speed_cache = ["n.a"]
@@ -62,8 +59,6 @@ class PipelineRunner(object):
     def run(self):
         for p in self.pipeline:
             self.context = p(self.context)
-
-        #self.log.debug("Frame #%d processed.", self.context['frame_number'])
 
         return self.context
 
@@ -237,7 +232,6 @@ class VehicleCounter(PipelineProcessor):
             ):
                 self.vehicle_count += 1 # a47
 		vehicle_count[0] = self.vehicle_count 
-		#is_vehicle_passed.append(1)
 
 		img = context['frame']
 
@@ -248,7 +242,7 @@ class VehicleCounter(PipelineProcessor):
       	        cv2.imwrite(current_path + "/detected_vehicles/vehicle" + str(vehicle_count[0]) + ".png", img[y:y + h - 1, x:x+w])
 
 
-#HEURISTIC SPEED PREDICTION
+		#HEURISTIC SPEED PREDICTION
 		for i, path in enumerate(context['pathes']):
 		    	path = np.array(path)[:, 1].tolist()
 			#print str(len(path))
@@ -316,10 +310,7 @@ class VehicleCounter(PipelineProcessor):
 			with open('traffic_measurement.csv', 'a') as f:
 				writer = csv.writer(f)				
 				writer.writerows([csv_line.split(',')])	
-
-
-#HEURISTIC SPEED PREDICTION	
-			
+		#HEURISTIC SPEED PREDICTION				
             else:
                 add = True
                 for p in path:
@@ -336,36 +327,6 @@ class VehicleCounter(PipelineProcessor):
         context['vehicle_count'] = self.vehicle_count
 	
         return context
-
-
-class CsvWriter(PipelineProcessor):
-
-    def __init__(self, path, name, start_time=0, fps=15):
-        super(CsvWriter, self).__init__()
-
-        self.fp = open(os.path.join(path, name), 'w')
-        self.writer = csv.DictWriter(self.fp, fieldnames=['time', 'vehicles'])
-        self.writer.writeheader()
-        self.start_time = start_time
-        self.fps = fps
-        self.path = path
-        self.name = name
-        self.prev = None
-
-    def __call__(self, context):
-        frame_number = context['frame_number']
-        count = _count = context['vehicle_count']
-
-        if self.prev:
-            _count = count - self.prev
-
-        time = ((self.start_time + int(frame_number / self.fps)) * 100 
-                + int(100.0 / self.fps) * (frame_number % self.fps))
-        self.writer.writerow({'time': time, 'vehicles': _count})
-        self.prev = count
-
-        return context
-
 
 class Visualizer(PipelineProcessor):   
 
@@ -414,8 +375,6 @@ class Visualizer(PipelineProcessor):
             mask = cv2.bitwise_and(_img, _img, mask=exit_mask)
             cv2.addWeighted(mask, 1, img, 1, 0, img)
 
-
-        #cv2.rectangle(img, (0, 0), (img.shape[1], 50), (0, 0, 0), cv2.FILLED)
         cv2.putText(img, ("Detected Vehicle: {total} ".format(total=vehicle_count)), (30, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1) #a47
 
